@@ -1721,7 +1721,7 @@
 /***/ 426:
 /***/ (function(module, exports) {
 
-	'use strict';
+	"use strict";
 
 	function init() {
 	    var width,
@@ -1736,6 +1736,11 @@
 	    // Main
 	    initHeader();
 	    addListeners();
+
+	    var list = document.getElementsByClassName("article");
+	    for (var i = 0; i < list.length; i++) {
+	        list[i].classList.add("show");
+	    }
 
 	    function initHeader() {
 	        width = window.innerWidth;
