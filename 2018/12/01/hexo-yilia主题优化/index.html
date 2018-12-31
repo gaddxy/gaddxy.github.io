@@ -315,6 +315,27 @@
 
 
 
+<div id="gitalk-container" style="padding: 0px 30px 0px 30px;"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<script type="text/javascript">
+  if (true) {
+    var gitalk = new Gitalk({
+      clientID: 'b9fd63811136b4fac38a',
+      clientSecret: 'af77be24c1697c68689f7e653f65324224401880',
+      repo: 'gaddxy.github.io',
+      owner: 'gaddxy',
+      admin: ['gaddxy'],
+      id: 'Sat Dec 01 2018 10:25:00 GMT+0800', //页面的唯一标识。长度必须小于50
+      //id: window.location.pathname,
+      //类似Facebook评论框的全屏遮罩效果.
+      distractionFreeMode: false
+    })
+    gitalk.render('gitalk-container')
+  }
+</script>
 
 
 
