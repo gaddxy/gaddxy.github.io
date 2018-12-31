@@ -12,7 +12,7 @@
   <title>thrift原理 | Gaddxy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="1 简介thrift最早由facebook开源，后来贡献给了apache。主要解决了跨语言、跨平台数据通讯的问题，且性能优越。这篇文章主要讲述thrift原理，thrift的使用以及thrift与其他rpc框架的对比参看其他文章。">
-<meta name="keywords" content="中间件,thrift">
+<meta name="keywords" content="开源框架,thrift">
 <meta property="og:type" content="article">
 <meta property="og:title" content="thrift原理">
 <meta property="og:url" content="https://blog.gaddxy.top/p/ce1a2bdd.html">
@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143453.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143511.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181229155209.png">
-<meta property="og:updated_time" content="2018-12-31T12:40:36.000Z">
+<meta property="og:updated_time" content="2018-12-31T15:33:18.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="thrift原理">
 <meta name="twitter:description" content="1 简介thrift最早由facebook开源，后来贡献给了apache。主要解决了跨语言、跨平台数据通讯的问题，且性能优越。这篇文章主要讲述thrift原理，thrift的使用以及thrift与其他rpc框架的对比参看其他文章。">
@@ -111,9 +111,9 @@ var _hmt = _hmt || [];
 				
 					<a class="github" target="_blank" href="https://github.com/gaddxy" title="github"><i class="icon-github"></i></a>
 		        
-					<a class="rss" target="_blank" href="#" title="rss"><i class="icon-rss"></i></a>
-		        
 					<a class="weixin" target="_blank" href="/assets/img/wx.jpg" title="weixin"><i class="icon-weixin"></i></a>
+		        
+					<a class="rss" target="_blank" href="#" title="rss"><i class="icon-rss"></i></a>
 		        
 			</div>
 		</nav>
@@ -152,9 +152,9 @@ var _hmt = _hmt || [];
 					
 						<a class="github" target="_blank" href="https://github.com/gaddxy" title="github"><i class="icon-github"></i></a>
 			        
-						<a class="rss" target="_blank" href="#" title="rss"><i class="icon-rss"></i></a>
-			        
 						<a class="weixin" target="_blank" href="/assets/img/wx.jpg" title="weixin"><i class="icon-weixin"></i></a>
+			        
+						<a class="rss" target="_blank" href="#" title="rss"><i class="icon-rss"></i></a>
 			        
 				</div>
 			</nav>
@@ -255,9 +255,9 @@ var _hmt = _hmt || [];
 <h4 id="2-4-1-Iface接口"><a href="#2-4-1-Iface接口" class="headerlink" title="2.4.1 Iface接口"></a>2.4.1 Iface接口</h4><p><img width="600" src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143340.png"><br>iface接口需要服务端实现，也是接口具体功能实现的地方。</p>
 <h4 id="2-4-2-抽象类ProcessFunction"><a href="#2-4-2-抽象类ProcessFunction" class="headerlink" title="2.4.2 抽象类ProcessFunction"></a>2.4.2 抽象类ProcessFunction</h4><p>ProcessFunction的主要作用是封装对iface接口的调用，包括iface接口中方法的参数以及返回值得封装。<br>iface接口中每个方法都会有与之对应的ProcessFunction对象。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">public abstract class ProcessFunction&lt;I, T extends TBase&gt; &#123;</span><br><span class="line">  private final String methodName;</span><br><span class="line"></span><br><span class="line">  public ProcessFunction(String methodName) &#123;</span><br><span class="line">    this.methodName = methodName;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public final void process(int seqid, TProtocol iprot, TProtocol oprot, I iface) throws TException &#123;</span><br><span class="line">    T args = getEmptyArgsInstance(); //得到接口参数对象</span><br><span class="line">    try &#123;</span><br><span class="line">      args.read(iprot); //由TProtocol获取到接口参数</span><br><span class="line">    &#125; catch (TProtocolException e) &#123;</span><br><span class="line">      iprot.readMessageEnd();</span><br><span class="line">      TApplicationException x = new TApplicationException(TApplicationException.PROTOCOL_ERROR, e.getMessage());</span><br><span class="line">      oprot.writeMessageBegin(new TMessage(getMethodName(), TMessageType.EXCEPTION, seqid));</span><br><span class="line">      x.write(oprot);</span><br><span class="line">      oprot.writeMessageEnd();</span><br><span class="line">      oprot.getTransport().flush();</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line">    iprot.readMessageEnd();</span><br><span class="line">    TBase result = getResult(iface, args); //调用iface接口，并传入接口参数对象，然后返回结果对象</span><br><span class="line">    oprot.writeMessageBegin(new TMessage(getMethodName(), TMessageType.REPLY, seqid)); //通过TProtocol写入Protocol的header部分</span><br><span class="line">    result.write(oprot);  //通过TProtocol将结果写入write buffer</span><br><span class="line">    oprot.writeMessageEnd();</span><br><span class="line">    oprot.getTransport().flush(); //write buffer flush</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  protected abstract TBase getResult(I iface, T args) throws TException; //调用iface接口，由子类实现，子类由thrift自动生成</span><br><span class="line">  protected abstract T getEmptyArgsInstance();  //初始化接口参数对象，由子类实现，子类由thrift自动生成</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>ProcessFunction的主要有三个方法。<br>getEmptyArgsInstance：由子类实现，子类由thrift自动生成，主要作用是返回一个iface接口所需的参数对象(基类TBase)。<br>getResult：由子类实现，子类由thrift自动生成，主要作用是调用iface接口，并传入iface接口所需参数(基类TBase)，然后返回结果对象(基类TBase)。<br>process：由getEmptyArgsInstance返回一个参数对象，通过TProtocol读取iface接口参数值，然后调用iface接口，得到结果对象，然后将结果对象通过TProtocol写入。</p>
-<h4 id="2-4-3-TBase接口"><a href="#2-4-3-TBase接口" class="headerlink" title="2.4.3 TBase接口"></a>2.4.3 TBase接口</h4><p>TBase是ProcessFunction中的封装iface接口方法的参数和返回值得接口。<br><img width="600" src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143352.png"><br>TBase的实现都由thrift生成，也是代码量最多的地方。<br>实际上iface接口方法的参数和返回值都是有一些Field组成的。<br>在对参数和返回的读写时，时间上是对一堆Field的读写。<br><img width="600" src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143440.png"></p>
+<h4 id="2-4-3-TBase接口"><a href="#2-4-3-TBase接口" class="headerlink" title="2.4.3 TBase接口"></a>2.4.3 TBase接口</h4><p>TBase是ProcessFunction中的封装iface接口方法的参数和返回值得接口。<br><img src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143352.png" alt=""><br>TBase的实现都由thrift生成，也是代码量最多的地方。<br>实际上iface接口方法的参数和返回值都是有一些Field组成的。<br>在对参数和返回的读写时，时间上是对一堆Field的读写。<br><img src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143440.png" alt=""></p>
 <h4 id="2-4-4-TProcessor接口"><a href="#2-4-4-TProcessor接口" class="headerlink" title="2.4.4 TProcessor接口"></a>2.4.4 TProcessor接口</h4><p>TProcessor接口只有一个方法process，TBaseProcessor对其进行了实现。<br>TProcessor的主要作用是读取protocol中的header获取到方法名，然后调用该方法对应的ProcessFunction。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">public abstract class TBaseProcessor&lt;I&gt; implements TProcessor &#123;</span><br><span class="line">  private final I iface;</span><br><span class="line">  private final Map&lt;String,ProcessFunction&lt;I, ? extends TBase&gt;&gt; processMap; //方法名与ProcessFunction的映射</span><br><span class="line">  //processMap由子类去实现，由thrift代码自动生成</span><br><span class="line">  protected TBaseProcessor(I iface, Map&lt;String, ProcessFunction&lt;I, ? extends TBase&gt;&gt; processFunctionMap) &#123;</span><br><span class="line">    this.iface = iface;</span><br><span class="line">    this.processMap = processFunctionMap;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  @Override</span><br><span class="line">  public boolean process(TProtocol in, TProtocol out) throws TException &#123;</span><br><span class="line">    TMessage msg = in.readMessageBegin(); //读取protocol中的header部分</span><br><span class="line">    ProcessFunction fn = processMap.get(msg.name); //根据读取到的方法名得到ProcessFunction</span><br><span class="line">    if (fn == null) &#123; //如果找不到，返回错误</span><br><span class="line">      TProtocolUtil.skip(in, TType.STRUCT);</span><br><span class="line">      in.readMessageEnd();</span><br><span class="line">      TApplicationException x = new TApplicationException(TApplicationException.UNKNOWN_METHOD, &quot;Invalid method name: &apos;&quot;+msg.name+&quot;&apos;&quot;);</span><br><span class="line">      out.writeMessageBegin(new TMessage(msg.name, TMessageType.EXCEPTION, msg.seqid));</span><br><span class="line">      x.write(out);</span><br><span class="line">      out.writeMessageEnd();</span><br><span class="line">      out.getTransport().flush();</span><br><span class="line">      return true;</span><br><span class="line">    &#125;</span><br><span class="line">    fn.process(msg.seqid, in, out, iface); //调用ProcessFunction的process方法，并传入protocol，in可以读取参数，out可以写入返回数据</span><br><span class="line">    return true;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="2-5-TServer"><a href="#2-5-TServer" class="headerlink" title="2.5 TServer"></a>2.5 TServer</h3><h4 id="2-5-1-抽象类TServer"><a href="#2-5-1-抽象类TServer" class="headerlink" title="2.5.1 抽象类TServer"></a>2.5.1 抽象类TServer</h4><p><img width="600" src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143453.png"><br><img width="600" src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143511.png"><br>TServer主要是组合Transport、TProtocol、TProcessor。<br>启动一个Server的步骤：</p>
+<h3 id="2-5-TServer"><a href="#2-5-TServer" class="headerlink" title="2.5 TServer"></a>2.5 TServer</h3><h4 id="2-5-1-抽象类TServer"><a href="#2-5-1-抽象类TServer" class="headerlink" title="2.5.1 抽象类TServer"></a>2.5.1 抽象类TServer</h4><p><img src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143453.png" alt=""><br><img src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181224143511.png" alt=""><br>TServer主要是组合Transport、TProtocol、TProcessor。<br>启动一个Server的步骤：</p>
 <ol>
 <li>创建一个TServerTransport，传入端口号</li>
 <li>创建TProcessor，并传入Iface接口的实现类</li>
@@ -275,7 +275,7 @@ var _hmt = _hmt || [];
 <li>一个ExecutorService类型的工作线程池，在SelectorThread线程中，监听到有业务socket中有调用请求过来，则将请求读取之后，交个ExecutorService线程池中的线程完成此次调用的具体执行。<h3 id="2-6-TServiceClient"><a href="#2-6-TServiceClient" class="headerlink" title="2.6 TServiceClient"></a>2.6 TServiceClient</h3><h4 id="2-6-1-抽象类TServiceClient"><a href="#2-6-1-抽象类TServiceClient" class="headerlink" title="2.6.1 抽象类TServiceClient"></a>2.6.1 抽象类TServiceClient</h4>TServiceClient是提供给客户端使用，其主要有两个方法。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">//向服务端发送请求</span><br><span class="line">protected void sendBase(String methodName, TBase args) throws TException &#123;</span><br><span class="line">  oprot_.writeMessageBegin(new TMessage(methodName, TMessageType.CALL, ++seqid_)); //写入被调用方法名称</span><br><span class="line">  args.write(oprot_); //写入被调用方法的参数</span><br><span class="line">  oprot_.writeMessageEnd();</span><br><span class="line">  oprot_.getTransport().flush();</span><br><span class="line">&#125;</span><br><span class="line">//从服务端接收返回值</span><br><span class="line">protected void receiveBase(TBase result, String methodName) throws TException &#123;</span><br><span class="line">  TMessage msg = iprot_.readMessageBegin();</span><br><span class="line">  if (msg.type == TMessageType.EXCEPTION) &#123; //异常消息处理</span><br><span class="line">    TApplicationException x = TApplicationException.read(iprot_);</span><br><span class="line">    iprot_.readMessageEnd();</span><br><span class="line">    throw x;</span><br><span class="line">  &#125;</span><br><span class="line">  if (msg.seqid != seqid_) &#123;</span><br><span class="line">    throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, methodName + &quot; failed: out of sequence response&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  result.read(iprot_); //将返回值读到result对象</span><br><span class="line">  iprot_.readMessageEnd();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 </li>
 </ol>
-<h4 id="2-6-2-TServiceClient的实现"><a href="#2-6-2-TServiceClient的实现" class="headerlink" title="2.6.2 TServiceClient的实现"></a>2.6.2 TServiceClient的实现</h4><p>TServiceClient的实现是由thrift自动生成，主要方法如下：<br><img width="600" src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181229155209.png"></p>
+<h4 id="2-6-2-TServiceClient的实现"><a href="#2-6-2-TServiceClient的实现" class="headerlink" title="2.6.2 TServiceClient的实现"></a>2.6.2 TServiceClient的实现</h4><p>TServiceClient的实现是由thrift自动生成，主要方法如下：<br><img src="https://raw.githubusercontent.com/gaddxy/resources/master/img/20181229155209.png" alt=""></p>
 <h4 id="2-6-3-结合客户端的调用"><a href="#2-6-3-结合客户端的调用" class="headerlink" title="2.6.3 结合客户端的调用"></a>2.6.3 结合客户端的调用</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) throws TException &#123;</span><br><span class="line">  TTransport transport = new TSocket(&quot;localhost&quot;,9000);</span><br><span class="line">  transport.open();</span><br><span class="line">  TProtocol protocol = new TCompactProtocol(transport);</span><br><span class="line">  HelloService.Client helloServiceClient = new HelloService.Client(protocol);</span><br><span class="line">  String r = helloServiceClient.sayHello(&quot;sss&quot;);</span><br><span class="line">  System.out.println(r);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="2-7-总结"><a href="#2-7-总结" class="headerlink" title="2.7 总结"></a>2.7 总结</h3><p>研究了这么多，终于可以解决一直以来的疑惑：</p>
 <ol>
@@ -311,6 +311,37 @@ var _hmt = _hmt || [];
 
 
       
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>一分也是爱啊<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    <div class="reward-box-item">
+                      <img class="reward-img" src="/assets/img/alipay.jpg">
+                      <span class="reward-type">支付宝</span>
+                    </div>
+                    
+                    
+                    <div class="reward-box-item">
+                      <img class="reward-img" src="/assets/img/wxpay.jpg">
+                      <span class="reward-type">微信</span>
+                    </div>
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
     </div>
     <div class="article-info article-info-index">
       
@@ -320,7 +351,7 @@ var _hmt = _hmt || [];
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">中间件</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">开源框架</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
@@ -336,7 +367,7 @@ var _hmt = _hmt || [];
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="/categories/中间件//" class="article-tag-list-link color4">中间件</a>
+        			<a href="/categories/开源框架//" class="article-tag-list-link color5">开源框架</a>
         		</li>
       		
 		</ul>
@@ -534,23 +565,23 @@ var _hmt = _hmt || [];
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">hexo</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">Mac</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">随笔</a>
+                <a href="javascript:void(0)" class="js-tag color2">Alfred</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">感悟</a>
+                <a href="javascript:void(0)" class="js-tag color5">hexo</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">中间件</a>
+                <a href="javascript:void(0)" class="js-tag color5">博客感悟</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">开源框架</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -679,5 +710,18 @@ var _hmt = _hmt || [];
 
 </div>
   </div>
+<script>
+  (function () {
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    } else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 </body>
 </html>
